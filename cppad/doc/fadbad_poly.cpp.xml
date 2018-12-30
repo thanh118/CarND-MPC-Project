@@ -1,0 +1,223 @@
+<?xml version='1.0'?>
+<html xmlns='http://www.w3.org/1999/xhtml'
+      xmlns:math='http://www.w3.org/1998/Math/MathML'
+>
+<head>
+<title>Fadbad Speed: Second Derivative of a Polynomial</title>
+<meta name="description" id="description" content="Fadbad Speed: Second Derivative of a Polynomial"/>
+<meta name="keywords" id="keywords" content=" fadbad speed polynomial compute_poly correct_poly speed_poly "/>
+<style type='text/css'>
+body { color : black }
+body { background-color : white }
+A:link { color : blue }
+A:visited { color : purple }
+A:active { color : purple }
+</style>
+<script type='text/javascript' language='JavaScript' src='_fadbad_poly.cpp_xml.js'>
+</script>
+</head>
+<body>
+<table><tr>
+<td>
+<a href="http://www.coin-or.org/CppAD/" target="_top"><img border="0" src="_image.gif"/></a>
+</td>
+<td>
+<select onchange='choose_across0(this)'>
+<option>Index-&gt;</option>
+<option>contents</option>
+<option>reference</option>
+<option>index</option>
+<option>search</option>
+<option>external</option>
+</select>
+</td>
+<td>
+<select onchange='choose_up0(this)'>
+<option>Up-&gt;</option>
+<option>CppAD</option>
+<option>Appendix</option>
+<option>speed</option>
+<option>speed_fadbad</option>
+<option>fadbad_poly.cpp</option>
+</select>
+</td>
+<td><a href="fadbad_det_lu.cpp.xml" target="_top">Prev</a>
+</td><td><a href="theory.xml" target="_top">Next</a>
+</td><td>
+<select onchange='choose_down4(this)'>
+<option>CppAD-&gt;</option>
+<option>Install</option>
+<option>Introduction</option>
+<option>AD</option>
+<option>ADFun</option>
+<option>library</option>
+<option>preprocessor</option>
+<option>Example</option>
+<option>Appendix</option>
+</select>
+</td>
+<td>
+<select onchange='choose_down3(this)'>
+<option>Appendix-&gt;</option>
+<option>Faq</option>
+<option>speed</option>
+<option>Theory</option>
+<option>glossary</option>
+<option>Bib</option>
+<option>Bugs</option>
+<option>WishList</option>
+<option>whats_new</option>
+<option>include_deprecated</option>
+<option>License</option>
+</select>
+</td>
+<td>
+<select onchange='choose_down2(this)'>
+<option>speed-&gt;</option>
+<option>speed_utility</option>
+<option>speed_adolc</option>
+<option>speed_cppad</option>
+<option>speed_fadbad</option>
+</select>
+</td>
+<td>
+<select onchange='choose_down1(this)'>
+<option>speed_fadbad-&gt;</option>
+<option>fadbad_det_minor.cpp</option>
+<option>fadbad_det_lu.cpp</option>
+<option>fadbad_poly.cpp</option>
+</select>
+</td>
+<td>fadbad_poly.cpp</td>
+<td>
+<select onchange='choose_current0(this)'>
+<option>Headings-&gt;</option>
+<option>Operation Sequence</option>
+<option>compute_poly</option>
+<option>correct_poly</option>
+<option>speed_poly</option>
+</select>
+</td>
+</tr></table><br/>
+
+
+
+<center><b><big><big>Fadbad Speed: Second Derivative of a Polynomial</big></big></b></center>
+<br/>
+<b><big><a name="Operation Sequence" id="Operation Sequence">Operation Sequence</a></big></b>
+<br/>
+Note that the polynomial evaluation
+<a href="glossary.xml#Operation.Sequence" target="_top"><span style='white-space: nowrap'>operation&#xA0;sequence</span></a>
+
+does not depend on the argument to the polynomial.
+Yet there does not seem to be a way to reuse the DAG to
+compute derivatives for other values of z.
+
+<br/>
+<br/>
+<b><big><a name="compute_poly" id="compute_poly">compute_poly</a></big></b>
+
+<br/>
+Routine that computes the second derivative of a polynomial using Fadbad:
+<code><font color='blue'><pre style='display:inline'> 
+# include &lt;vector&gt;
+# include &lt;cppad/speed/uniform_01.hpp&gt;
+# include &lt;cppad/poly.hpp&gt;
+# include &lt;cppad/near_equal.hpp&gt;
+# include &lt;Fadbad++/tadiff.h&gt;
+
+void compute_poly(
+	size_t                     size     , 
+	size_t                     repeat   , 
+	std::vector&lt;double&gt;       &amp;a        ,  // coefficients of polynomial
+	std::vector&lt;double&gt;       &amp;z        ,  // polynomial argument value
+	std::vector&lt;double&gt;       &amp;ddp      )  // second derivative w.r.t z  
+{
+	// -----------------------------------------------------
+	// setup
+	size_t i;     // temporary index     
+	T&lt;double&gt;  Z; // domain space AD value
+	T&lt;double&gt;  P; // range space AD value
+
+	// choose the polynomial coefficients
+	CppAD::uniform_01(size, a);
+
+	// AD copy of the polynomial coefficients
+	std::vector&lt; T&lt;double&gt; &gt; A(size);
+	for(i = 0; i &lt; size; i++)
+		A[i] = a[i];
+
+	// ------------------------------------------------------
+	while(repeat--)
+	{	// get the next argument value
+		CppAD::uniform_01(1, z);
+
+		// independent variable value
+		Z    = z[0]; // argument value
+		Z[1] = 1;    // argument first order Taylor coefficient
+
+		// AD computation of the dependent variable
+		P = CppAD::Poly(0, A, Z);
+
+		// Taylor-expand P to degree two
+		P.eval(2);
+
+		// second derivative is twice second order Taylor coefficient
+		ddp[0] = 2. * P[2];
+
+		// Free DAG corresponding to P does not seem to improve speed.
+		// Probably because it gets freed the next time P is assigned.
+		// P.reset();
+	}
+	// ------------------------------------------------------
+	return;
+}
+</pre></font></code>
+
+
+<br/>
+<br/>
+<b><big><a name="correct_poly" id="correct_poly">correct_poly</a></big></b>
+
+<br/>
+Routine that tests the correctness of the result computed by compute_poly:
+<code><font color='blue'><pre style='display:inline'> 
+bool correct_poly(void)
+{	size_t size   = 10;
+	size_t repeat = 1;
+	std::vector&lt;double&gt;  a(size), z(1), ddp(1);
+
+	compute_poly(size, repeat, a, z, ddp);
+
+	// use direct evaluation by Poly to check AD evaluation
+	double check = CppAD::Poly(2, a, z[0]);
+	bool ok = CppAD::NearEqual(check, ddp[0], 1e-10, 1e-10);
+	
+	return ok;
+}
+</pre></font></code>
+
+
+<br/>
+<br/>
+<b><big><a name="speed_poly" id="speed_poly">speed_poly</a></big></b>
+
+<br/>
+Routine that links compute_poly to <a href="speed_test.xml" target="_top"><span style='white-space: nowrap'>speed_test</span></a>
+:
+
+<code><font color='blue'><pre style='display:inline'> 
+void speed_poly(size_t size, size_t repeat)
+{	std::vector&lt;double&gt;  a(size), z(1), ddp(1);
+
+	compute_poly(size, repeat, a, z, ddp);
+	
+	return;
+}
+</pre></font></code>
+
+
+<hr/>Input File: speed/fadbad/poly.cpp
+
+</body>
+</html>

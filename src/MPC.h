@@ -3,11 +3,11 @@
 
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
-
+using namespace std;
 class MPC {
  public:
   MPC();
-
+  vector<double> pred_x, pred_y;
   virtual ~MPC();
 
   // Solve the model given an initial state and polynomial coefficients.
