@@ -12,7 +12,7 @@ This project consists of a c++ implementation of a Model Predictive Control (MPC
 
 ## 1.Access 
 
-The source code for this project is available at [project code](https://github.com/otomata/CarND-MPC-Project).
+The source code for this project is available at [project code](https://github.com/thanh118/CarND-MPC-Project).
 
 ## 2.Files
 
